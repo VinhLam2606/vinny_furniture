@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:vinny_furniture/ultis/enums/onboarding_page_position.dart';
 
 class OnboardingChildPage extends StatelessWidget {
-  const OnboardingChildPage({super.key});
+  final OnboardingPagePosition position;
+  final VoidCallback nextOnpressed;
+  final PageController pageController;
+
+  const OnboardingChildPage({
+    super.key,
+    required this.position,
+    required this.nextOnpressed,
+    required this.pageController,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,18 +24,18 @@ class OnboardingChildPage extends StatelessWidget {
               minHeight: MediaQuery.of(context).size.height,
             ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Đẩy 2 đầu
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Column(
                   children: [
-                    _buildSkipButtom(),
+                    _buildSkipButton(context),
                     _buildOnBoardingImage(),
                     _buildOnBoardingPageControl(),
                     _buildOnBoardingPageTileAndContents(),
                   ],
                 ),
-                _buildOnBoardingPageNextAndPreviousButton(),
+                _buildOnBoardingPageNextAndPreviousButton(context),
               ],
             ),
           ),
@@ -34,13 +44,15 @@ class OnboardingChildPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSkipButtom() {
+  Widget _buildSkipButton(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(top: 18),
+      margin: const EdgeInsets.only(top: 18),
       alignment: AlignmentDirectional.centerStart,
       child: TextButton(
-        onPressed: () {},
-        child: Text(
+        onPressed: () {
+          Navigator.pushReplacementNamed(context, '/home');
+        },
+        child: const Text(
           "Skip",
           style: TextStyle(
             fontSize: 16,
@@ -54,9 +66,9 @@ class OnboardingChildPage extends StatelessWidget {
 
   Widget _buildOnBoardingImage() {
     return Container(
-      margin: EdgeInsets.only(top: 80),
+      margin: const EdgeInsets.only(top: 80),
       child: Image.asset(
-        'assets/images/intro/page1.png',
+        position.onboardingPageImage(),
         height: 296,
         width: 271,
       ),
@@ -64,51 +76,43 @@ class OnboardingChildPage extends StatelessWidget {
   }
 
   Widget _buildOnBoardingPageControl() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildIndicator(OnboardingPagePosition.page1),
+        const SizedBox(width: 8),
+        _buildIndicator(OnboardingPagePosition.page2),
+        const SizedBox(width: 8),
+        _buildIndicator(OnboardingPagePosition.page3),
+      ],
+    );
+  }
+
+  Widget _buildIndicator(OnboardingPagePosition page) {
     return Container(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            height: 4,
-            width: 26,
-            decoration: BoxDecoration(
-              color: Colors.blueAccent.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(56),
-            ),
-          ),
-          Container(
-            height: 4,
-            width: 26,
-            margin: EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.blueAccent,
-              borderRadius: BorderRadius.circular(56),
-            ),
-          ),
-          Container(
-            height: 4,
-            width: 26,
-            decoration: BoxDecoration(
-              color: Colors.blueAccent,
-              borderRadius: BorderRadius.circular(56),
-            ),
-          ),
-        ],
+      height: 4,
+      width: 26,
+      decoration: BoxDecoration(
+        color:
+            position == page
+                ? Colors.blueAccent
+                : Colors.blueAccent.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(56),
       ),
     );
   }
 
   Widget _buildOnBoardingPageTileAndContents() {
     return Container(
-      margin: EdgeInsets.only(top: 30),
-      padding: EdgeInsets.symmetric(horizontal: 35),
+      margin: const EdgeInsets.only(top: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 35),
       child: Column(
         children: [
           Container(
-            margin: EdgeInsets.only(top: 24),
+            margin: const EdgeInsets.only(top: 24),
             child: Text(
-              "Easily Find New Furniture",
-              style: TextStyle(
+              position.onboardingPageTitle(),
+              style: const TextStyle(
                 fontSize: 28,
                 color: Colors.blueAccent,
                 fontFamily: "Lato",
@@ -117,9 +121,9 @@ class OnboardingChildPage extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
           ),
-          SizedBox(height: 30),
+          const SizedBox(height: 30),
           Text(
-            "You can easily find new furniture for your home with a variety of options at reasonable prices.",
+            position.onboardingPageContents(),
             style: TextStyle(
               fontSize: 18,
               color: Colors.blueAccent.withOpacity(0.8),
@@ -132,14 +136,19 @@ class OnboardingChildPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOnBoardingPageNextAndPreviousButton() {
+  Widget _buildOnBoardingPageNextAndPreviousButton(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 60),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
       child: Row(
         children: [
           TextButton(
-            onPressed: () {},
-            child: Text(
+            onPressed: () {
+              final currentIndex = position.index;
+              if (currentIndex > 0) {
+                pageController.jumpToPage(currentIndex - 1);
+              }
+            },
+            child: const Text(
               "Previous",
               style: TextStyle(
                 fontSize: 16,
@@ -148,16 +157,16 @@ class OnboardingChildPage extends StatelessWidget {
               ),
             ),
           ),
-          Spacer(),
+          const Spacer(),
           ElevatedButton(
-            onPressed: () {},
+            onPressed: nextOnpressed,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blueAccent,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(
+            child: const Text(
               "Next",
               style: TextStyle(
                 fontSize: 16,
