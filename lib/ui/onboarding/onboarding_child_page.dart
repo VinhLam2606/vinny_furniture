@@ -1,182 +1,68 @@
+// onboarding_page_view.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vinny_furniture/ultis/enums/onboarding_page_position.dart';
 
-class OnboardingChildPage extends StatelessWidget {
-  final OnboardingPagePosition position;
-  final VoidCallback nextOnpressed;
-  final PageController pageController;
+import '../welcome/welcome_page.dart';
+import 'onboarding_page_view.dart';
 
-  const OnboardingChildPage({
-    super.key,
-    required this.position,
-    required this.nextOnpressed,
-    required this.pageController,
-  });
+class OnboardingPageView extends StatefulWidget {
+  const OnboardingPageView({super.key});
+
+  @override
+  State<OnboardingPageView> createState() => _OnboardingPageViewState();
+}
+
+class _OnboardingPageViewState extends State<OnboardingPageView> {
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Column(
-                  children: [
-                    _buildSkipButton(context),
-                    _buildOnBoardingImage(),
-                    _buildOnBoardingPageControl(),
-                    _buildOnBoardingPageTileAndContents(),
-                  ],
-                ),
-                _buildOnBoardingPageNextAndPreviousButton(context),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkipButton(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 18),
-      alignment: AlignmentDirectional.centerStart,
-      child: TextButton(
-        onPressed: () {
-          Navigator.pushReplacementNamed(context, '/home');
-        },
-        child: const Text(
-          "Skip",
-          style: TextStyle(
-            fontSize: 16,
-            fontFamily: "Lato",
-            color: Colors.blueAccent,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOnBoardingImage() {
-    return Container(
-      margin: const EdgeInsets.only(top: 80),
-      child: Image.asset(
-        position.onboardingPageImage(),
-        height: 296,
-        width: 271,
-      ),
-    );
-  }
-
-  Widget _buildOnBoardingPageControl() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildIndicator(OnboardingPagePosition.page1),
-        const SizedBox(width: 8),
-        _buildIndicator(OnboardingPagePosition.page2),
-        const SizedBox(width: 8),
-        _buildIndicator(OnboardingPagePosition.page3),
-      ],
-    );
-  }
-
-  Widget _buildIndicator(OnboardingPagePosition page) {
-    return Container(
-      height: 4,
-      width: 26,
-      decoration: BoxDecoration(
-        color:
-            position == page
-                ? Colors.blueAccent
-                : Colors.blueAccent.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(56),
-      ),
-    );
-  }
-
-  Widget _buildOnBoardingPageTileAndContents() {
-    return Container(
-      margin: const EdgeInsets.only(top: 30),
-      padding: const EdgeInsets.symmetric(horizontal: 35),
-      child: Column(
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
         children: [
-          Container(
-            margin: const EdgeInsets.only(top: 24),
-            child: Text(
-              position.onboardingPageTitle(),
-              style: const TextStyle(
-                fontSize: 28,
-                color: Colors.blueAccent,
-                fontFamily: "Lato",
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
+          OnboardingChildPage(
+            position: OnboardingPagePosition.page1,
+            pageController: _pageController,
+            nextOnpressed: () => _pageController.jumpToPage(1),
+            skipOnpressed: _completeOnboardingAndNavigate,
           ),
-          const SizedBox(height: 30),
-          Text(
-            position.onboardingPageContents(),
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.blueAccent.withOpacity(0.8),
-              fontFamily: "Lato",
-            ),
-            textAlign: TextAlign.center,
+          OnboardingChildPage(
+            position: OnboardingPagePosition.page2,
+            pageController: _pageController,
+            nextOnpressed: () => _pageController.jumpToPage(2),
+            skipOnpressed: _completeOnboardingAndNavigate,
+          ),
+          OnboardingChildPage(
+            position: OnboardingPagePosition.page3,
+            pageController: _pageController,
+            nextOnpressed: _completeOnboardingAndNavigate,
+            skipOnpressed: _completeOnboardingAndNavigate,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOnBoardingPageNextAndPreviousButton(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 60),
-      child: Row(
-        children: [
-          TextButton(
-            onPressed: () {
-              final currentIndex = position.index;
-              if (currentIndex > 0) {
-                pageController.jumpToPage(currentIndex - 1);
-              }
-            },
-            child: const Text(
-              "Previous",
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: "Lato",
-                color: Colors.blueAccent,
-              ),
-            ),
-          ),
-          const Spacer(),
-          ElevatedButton(
-            onPressed: nextOnpressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text(
-              "Next",
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: "Lato",
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> _completeOnboardingAndNavigate() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool("kOnboardingCompleted", true);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomePage()),
+      );
+    } catch (e) {
+      debugPrint('Error saving onboarding status: $e');
+    }
   }
 }
